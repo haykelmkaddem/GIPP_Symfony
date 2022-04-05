@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Salon{% endblock %}
+
+{% block body %}
+    <h1>Salon</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ salon.id }}</td>
+            </tr>
+            <tr>
+                <th>Titre</th>
+                <td>{{ salon.titre }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ salon.description }}</td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <td>{{ salon.date ? salon.date|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Temps_debut</th>
+                <td>{{ salon.tempsDebut ? salon.tempsDebut|date('H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Temps_fin</th>
+                <td>{{ salon.tempsFin ? salon.tempsFin|date('H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Lieu</th>
+                <td>{{ salon.lieu }}</td>
+            </tr>
+            <tr>
+                <th>Max_invitation</th>
+                <td>{{ salon.maxInvitation }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_salon_index') }}">back to list</a>
+
+    <a href="{{ path('app_salon_edit', {'id': salon.id}) }}">edit</a>
+
+    {{ include('salon/_delete_form.html.twig') }}
+{% endblock %}
