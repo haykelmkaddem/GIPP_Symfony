@@ -9,6 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 /**
  * @Route("/actualite")
@@ -16,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class ActualiteController extends AbstractController
 {
     /**
-     * @Route("/", name="app_actualite_index", methods={"GET"})
+     * @Route("/", name="actualite_index", methods={"GET"})
      */
     public function index(ActualiteRepository $actualiteRepository): Response
     {
@@ -26,63 +28,133 @@ class ActualiteController extends AbstractController
     }
 
     /**
-     * @Route("/new", name="app_actualite_new", methods={"GET", "POST"})
+     * @Route("/new", name="actualite_new", methods={"GET", "POST"})
      */
-    public function new(Request $request, ActualiteRepository $actualiteRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $actualite = new Actualite();
-        $form = $this->createForm(ActualiteType::class, $actualite);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
+            $actualite = new Actualite();
+            $actualite->setTitre($data['titre']);
+            $actualite->setDescription($data['description']);
+            $actualite->setCreatedAt(date_create_immutable('now'));
+            $actualite->setVisibilite(0);
+            $entityManager->persist($actualite);
+            $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $actualiteRepository->add($actualite);
-            return $this->redirectToRoute('app_actualite_index', [], Response::HTTP_SEE_OTHER);
+            $dataRes = $this->get('serializer')->serialize($actualite, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+
+        }else{
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
-
-        return $this->render('actualite/new.html.twig', [
-            'actualite' => $actualite,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_actualite_show", methods={"GET"})
+     * @Route("/show", name="actualite_show", methods={"GET", "POST"})
      */
-    public function show(Actualite $actualite): Response
+    public function show(Request $request, ActualiteRepository $actualiteRepository): Response
     {
-        return $this->render('actualite/show.html.twig', [
-            'actualite' => $actualite,
-        ]);
+        if($data = json_decode($request->getContent(), true)) {
+            $actualitedata = $actualiteRepository->findOneBy(['id' => $data['actualiteId']]);
+            $dataRes = $this->get('serializer')->serialize($actualitedata, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 
     /**
-     * @Route("/{id}/edit", name="app_actualite_edit", methods={"GET", "POST"})
+     * @Route("/edit", name="actualite_edit", methods={"GET", "POST"})
      */
-    public function edit(Request $request, Actualite $actualite, ActualiteRepository $actualiteRepository): Response
+    public function edit(Request $request, EntityManagerInterface $entityManager, ActualiteRepository $actualiteRepository): Response
     {
-        $form = $this->createForm(ActualiteType::class, $actualite);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
+            $actualite = $actualiteRepository->find($data['actualiteId']);
+            $actualite->setTitre($data['titre']);
+            $actualite->setDescription($data['description']);
+            $entityManager->persist($actualite);
+            $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $actualiteRepository->add($actualite);
-            return $this->redirectToRoute('app_actualite_index', [], Response::HTTP_SEE_OTHER);
+            $dataRes = $this->get('serializer')->serialize($actualite, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+
+        } else{
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
-
-        return $this->render('actualite/edit.html.twig', [
-            'actualite' => $actualite,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_actualite_delete", methods={"POST"})
+     * @Route("/delete", name="actualite_delete", methods={"GET", "POST"})
      */
-    public function delete(Request $request, Actualite $actualite, ActualiteRepository $actualiteRepository): Response
+    public function delete(Request $request, EntityManagerInterface $entityManager, ActualiteRepository  $actualiteRepository): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$actualite->getId(), $request->request->get('_token'))) {
-            $actualiteRepository->remove($actualite);
-        }
+        if($data = json_decode($request->getContent(), true)) {
+            $actualite = $actualiteRepository->find($data['actualiteId']);
+            $entityManager->remove($actualite);
+            $entityManager->flush();
 
-        return $this->redirectToRoute('app_actualite_index', [], Response::HTTP_SEE_OTHER);
+            $res = [
+                'message'=> "success"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else{
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
+
+    /**
+     * @Route("/showall", name="actualite_showall", methods={"GET", "POST"})
+     */
+    public function showall(Request $request, EntityManagerInterface $entityManager, ActualiteRepository $actualiteRepository): Response
+    {
+        $actualitedata = $actualiteRepository->findAll();
+        if($actualitedata) {
+            $dataRes = $this->get('serializer')->serialize($actualitedata, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $categorydata = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 }

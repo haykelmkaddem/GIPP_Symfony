@@ -9,6 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 /**
  * @Route("/categorie")
@@ -16,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class CategorieController extends AbstractController
 {
     /**
-     * @Route("/", name="app_categorie_index", methods={"GET"})
+     * @Route("/", name="categorie_index", methods={"GET"})
      */
     public function index(CategorieRepository $categorieRepository): Response
     {
@@ -26,63 +28,152 @@ class CategorieController extends AbstractController
     }
 
     /**
-     * @Route("/new", name="app_categorie_new", methods={"GET", "POST"})
+     * @Route("/new", name="categorie_new", methods={"GET", "POST"})
      */
-    public function new(Request $request, CategorieRepository $categorieRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $categorie = new Categorie();
-        $form = $this->createForm(CategorieType::class, $categorie);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
+            $categorie = new Categorie();
+            $categorie->setNom($data['nom']);
+            $categorie->setDescription($data['description']);
+            $entityManager->persist($categorie);
+            $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $categorieRepository->add($categorie);
-            return $this->redirectToRoute('app_categorie_index', [], Response::HTTP_SEE_OTHER);
+            $dataRes = $this->get('serializer')->serialize($categorie, 'json', ['groups' => ['categorie','produit']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else{
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
 
-        return $this->render('categorie/new.html.twig', [
-            'categorie' => $categorie,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_categorie_show", methods={"GET"})
+     * @Route("/show", name="categorie_show", methods={"GET", "POST"})
      */
-    public function show(Categorie $categorie): Response
+    public function show(Request $request, EntityManagerInterface $entityManager, CategorieRepository $categorieRepository): Response
     {
-        return $this->render('categorie/show.html.twig', [
-            'categorie' => $categorie,
-        ]);
+        if($data = json_decode($request->getContent(), true)) {
+            $categorydata = $categorieRepository->findOneBy(['id' => $data['categorieId']]);
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 
     /**
-     * @Route("/{id}/edit", name="app_categorie_edit", methods={"GET", "POST"})
+     * @Route("/edit", name="categorie_edit", methods={"GET", "POST"})
      */
-    public function edit(Request $request, Categorie $categorie, CategorieRepository $categorieRepository): Response
+    public function edit(Request $request,  EntityManagerInterface $entityManager, CategorieRepository $categorieRepository): Response
     {
-        $form = $this->createForm(CategorieType::class, $categorie);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $categorieRepository->add($categorie);
-            return $this->redirectToRoute('app_categorie_index', [], Response::HTTP_SEE_OTHER);
+            // $categorydata = $entityManager->getRepository(Categorie::class)->find($data['categorieId']);
+            $categorydata = $categorieRepository->findOneBy(['id' => $data['categorieId']]);
+            if ($categorydata){
+                $categorydata->setNom($data['nom']);
+                $categorydata->setDescription($data['description']);
+                $entityManager->persist($categorydata);
+                $entityManager->flush();
+                $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit']]);
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }else {
+                $result = [
+                    'message' => 'pas de données'
+                ];
+                $dataRes = $this->get('serializer')->serialize($result, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }
+
+        } else {
+            $res = [
+                'message' => 'erreur'
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
 
-        return $this->render('categorie/edit.html.twig', [
-            'categorie' => $categorie,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_categorie_delete", methods={"POST"})
+     * @Route("/delete", name="categorie_delete", methods={"GET", "POST"})
      */
-    public function delete(Request $request, Categorie $categorie, CategorieRepository $categorieRepository): Response
+    public function delete(Request $request, CategorieRepository $categorieRepository, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$categorie->getId(), $request->request->get('_token'))) {
-            $categorieRepository->remove($categorie);
-        }
+        if($data = json_decode($request->getContent(), true)) {
+            $categorydata = $categorieRepository->find($data['categorieId']);
+            if ($categorydata){
+                $entityManager->remove($categorydata);
+                $entityManager->flush();
+                $result = [
+                    'message' => 'removed'
+                ];
+                $dataRes = $this->get('serializer')->serialize($result, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }else {
+                $result = [
+                    'message' => 'pas de données'
+                ];
+                $dataRes = $this->get('serializer')->serialize($result, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }
 
-        return $this->redirectToRoute('app_categorie_index', [], Response::HTTP_SEE_OTHER);
+        }else {
+            $res = [
+                'message' => 'erreur'
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
+    /**
+     * @Route("/showall", name="categorie_showall", methods={"GET", "POST"})
+     */
+    public function showall(Request $request, EntityManagerInterface $entityManager, CategorieRepository $categorieRepository): Response
+    {
+        $categorydata = $categorieRepository->findAll();
+        if($categorydata) {
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $categorydata = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 }

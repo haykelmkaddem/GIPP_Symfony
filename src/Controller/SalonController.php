@@ -9,6 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 /**
  * @Route("/salon")
@@ -16,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class SalonController extends AbstractController
 {
     /**
-     * @Route("/", name="app_salon_index", methods={"GET"})
+     * @Route("/", name="salon_index", methods={"GET"})
      */
     public function index(SalonRepository $salonRepository): Response
     {
@@ -26,63 +28,140 @@ class SalonController extends AbstractController
     }
 
     /**
-     * @Route("/new", name="app_salon_new", methods={"GET", "POST"})
+     * @Route("/new", name="salon_new", methods={"GET", "POST"})
      */
-    public function new(Request $request, SalonRepository $salonRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $salon = new Salon();
-        $form = $this->createForm(SalonType::class, $salon);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
+            $salon = new Salon();
+            $salon->setTitre($data['titre']);
+            $salon->setDescription($data['description']);
+            $salon->setDate(new \DateTime($data['date']));
+            $salon->setTempsDebut(new \DateTime($data['temps_debut']));
+            $salon->setTempsFin(new \DateTime($data['temps_fin']));
+            $salon->setLieu($data['lieu']);
+            $salon->setMaxInvitation($data['max_invitation']);
+            $entityManager->persist($salon);
+            $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $salonRepository->add($salon);
-            return $this->redirectToRoute('app_salon_index', [], Response::HTTP_SEE_OTHER);
+            $dataRes = $this->get('serializer')->serialize($salon, 'json', ['groups' => ['salon','reservation','user']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
-
-        return $this->render('salon/new.html.twig', [
-            'salon' => $salon,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_salon_show", methods={"GET"})
+     * @Route("/show", name="salon_show", methods={"GET"})
      */
-    public function show(Salon $salon): Response
+    public function show(Request $request, SalonRepository $salonRepository): Response
     {
-        return $this->render('salon/show.html.twig', [
-            'salon' => $salon,
-        ]);
+        if($data = json_decode($request->getContent(), true)) {
+            $salondata = $salonRepository->findOneBy(['id' => $data['salonId']]);
+            $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 
     /**
-     * @Route("/{id}/edit", name="app_salon_edit", methods={"GET", "POST"})
+     * @Route("/edit", name="salon_edit", methods={"GET", "POST"})
      */
-    public function edit(Request $request, Salon $salon, SalonRepository $salonRepository): Response
+    public function edit(Request $request, EntityManagerInterface $entityManager, SalonRepository $salonRepository): Response
     {
-        $form = $this->createForm(SalonType::class, $salon);
-        $form->handleRequest($request);
+        if($data = json_decode($request->getContent(), true)) {
+            $salondata = $salonRepository->findOneBy(['id' => $data['salonId']]);
+            $salondata->setTitre($data['titre']);
+            $salondata->setDescription($data['description']);
+            $salondata->setDate(new \DateTime($data['date']));
+            $salondata->setTempsDebut(new \DateTime($data['temps_debut']));
+            $salondata->setTempsFin(new \DateTime($data['temps_fin']));
+            $salondata->setLieu($data['lieu']);
+            $salondata->setMaxInvitation($data['max_invitation']);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $salonRepository->add($salon);
-            return $this->redirectToRoute('app_salon_index', [], Response::HTTP_SEE_OTHER);
+            $entityManager->persist($salondata);
+            $entityManager->flush();
+
+            $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         }
-
-        return $this->render('salon/edit.html.twig', [
-            'salon' => $salon,
-            'form' => $form->createView(),
-        ]);
     }
 
     /**
-     * @Route("/{id}", name="app_salon_delete", methods={"POST"})
+     * @Route("/delete", name="salon_delete", methods={"POST"})
      */
-    public function delete(Request $request, Salon $salon, SalonRepository $salonRepository): Response
+    public function delete(Request $request, EntityManagerInterface $entityManager, SalonRepository $salonRepository): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$salon->getId(), $request->request->get('_token'))) {
-            $salonRepository->remove($salon);
-        }
+        if($data = json_decode($request->getContent(), true)) {
+            $salondata = $salonRepository->findOneBy(['id' => $data['salonId']]);
 
-        return $this->redirectToRoute('app_salon_index', [], Response::HTTP_SEE_OTHER);
+            $entityManager->remove($salondata);
+            $entityManager->flush();
+
+            $res = [
+                'message'=> "success"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else{
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
+    /**
+     * @Route("/showall", name="salon_showall", methods={"GET", "POST"})
+     */
+    public function showall(Request $request, EntityManagerInterface $entityManager, SalonRepository $salonRepository): Response
+    {
+        $salondata = $salonRepository->findAll();
+        if($salondata) {
+            $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $categorydata = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
     }
 }
