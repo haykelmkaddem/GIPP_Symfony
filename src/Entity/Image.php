@@ -29,9 +29,10 @@ class Image
     private $imageURL;
 
     /**
-     * @ORM\OneToMany(targetEntity=Produit::class, mappedBy="image")
+     * @ORM\ManyToOne(targetEntity=Produit::class, inversedBy="image")
      */
     private $produit;
+
 
     public function __construct()
     {
@@ -55,33 +56,16 @@ class Image
         return $this;
     }
 
-    /**
-     * @return Collection<int, Produit>
-     */
-    public function getProduit(): Collection
+    public function getProduit(): ?Produit
     {
         return $this->produit;
     }
 
-    public function addProduit(Produit $produit): self
+    public function setProduit(?Produit $produit): self
     {
-        if (!$this->produit->contains($produit)) {
-            $this->produit[] = $produit;
-            $produit->setImage($this);
-        }
+        $this->produit = $produit;
 
         return $this;
     }
 
-    public function removeProduit(Produit $produit): self
-    {
-        if ($this->produit->removeElement($produit)) {
-            // set the owning side to null (unless already changed)
-            if ($produit->getImage() === $this) {
-                $produit->setImage(null);
-            }
-        }
-
-        return $this;
-    }
 }

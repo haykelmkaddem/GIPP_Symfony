@@ -25,29 +25,41 @@ class LoginController extends AbstractController
         if($data = json_decode($request->getContent(), true)) {
 
             $userdata = $userRepository->findOneBy(['email' => $data['email']]);
+            if ($userdata) {
+                $encoder = $encoderFactory->getEncoder($userdata);
+                if ($encoder->isPasswordValid($userdata->getPassword(), $data['password'], null)) {
+                    $res = [
+                        "user" => $userdata,
+                        "message" => "ok"
+                    ];
+                    $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
+                    $response = new Response($dataRes);
+                    $response->headers->set('Content-Type', 'application/json');
+                    return $response;
+                } else {
+                    $res = [
+                        'message' => 'password wrong'
+                    ];
+                    $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
+                    $response = new Response($dataRes);
+                    $response->headers->set('Content-Type', 'application/json');
+                    return $response;
+                }
 
-
-            $encoder = $encoderFactory->getEncoder($userdata);
-            if($encoder->isPasswordValid($userdata->getPassword(),$data['password'],null)){
-                $dataRes = $this->get('serializer')->serialize($userdata, 'json');
-                $response = new Response($dataRes);
-                $response->headers->set('Content-Type', 'application/json');
-                return $response;
-            }else{
+            } else {
                 $res = [
-                    'message'=> 'password wrong'
+                    'message' => "email not found"
                 ];
-                $dataRes = $this->get('serializer')->serialize($res, 'json');
+                $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
                 $response = new Response($dataRes);
                 $response->headers->set('Content-Type', 'application/json');
                 return $response;
             }
-
-        } else{
+        } else {
             $res = [
-                'message'=> "error"
+                'message' => "no data"
             ];
-            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;

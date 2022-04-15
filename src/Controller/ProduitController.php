@@ -154,19 +154,10 @@ class ProduitController extends AbstractController
     public function showall(Request $request, EntityManagerInterface $entityManager, ProduitRepository $produitRepository): Response
     {
         $produitdata = $produitRepository->findAll();
-        if($produitdata) {
             $dataRes = $this->get('serializer')->serialize($produitdata, 'json', ['groups' => ['produit','pourproduit','panier', 'avis', 'produitvendus','forproduct']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
-        } else {
-            $categorydata = [
-                'message' => 'pas de données'
-            ];
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
-        }
+
     }
 }

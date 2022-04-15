@@ -359,6 +359,16 @@ class User implements UserInterface
 
     public function setEntreprise(?Entreprise $entreprise): self
     {
+        // unset the owning side of the relation if necessary
+        if ($entreprise === null && $this->entreprise !== null) {
+            $this->entreprise->setUser(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($entreprise !== null && $entreprise->getUser() !== $this) {
+            $entreprise->setUser($this);
+        }
+
         $this->entreprise = $entreprise;
 
         return $this;

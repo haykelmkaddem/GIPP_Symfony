@@ -64,11 +64,6 @@ class Produit
      */
     private $categorie;
 
-    /**
-     * @Groups("pourproduit")
-     * @ORM\ManyToOne(targetEntity=Image::class, inversedBy="produit")
-     */
-    private $image;
 
     /**
      * @Groups("pourproduit")
@@ -87,11 +82,23 @@ class Produit
      */
     private $avis;
 
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $discount;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="produit")
+     */
+    private $image;
+
     public function __construct()
     {
         $this->panier = new ArrayCollection();
         $this->Produitvendus = new ArrayCollection();
         $this->avis = new ArrayCollection();
+        $this->image = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -183,17 +190,6 @@ class Produit
         return $this;
     }
 
-    public function getImage(): ?Image
-    {
-        return $this->image;
-    }
-
-    public function setImage(?Image $image): self
-    {
-        $this->image = $image;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Panier>
@@ -279,6 +275,48 @@ class Produit
             // set the owning side to null (unless already changed)
             if ($avi->getProduit() === $this) {
                 $avi->setProduit(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getDiscount(): ?float
+    {
+        return $this->discount;
+    }
+
+    public function setDiscount(?float $discount): self
+    {
+        $this->discount = $discount;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Image>
+     */
+    public function getImage(): Collection
+    {
+        return $this->image;
+    }
+
+    public function addImage(Image $image): self
+    {
+        if (!$this->image->contains($image)) {
+            $this->image[] = $image;
+            $image->setProduit($this);
+        }
+
+        return $this;
+    }
+
+    public function removeImage(Image $image): self
+    {
+        if ($this->image->removeElement($image)) {
+            // set the owning side to null (unless already changed)
+            if ($image->getProduit() === $this) {
+                $image->setProduit(null);
             }
         }
 

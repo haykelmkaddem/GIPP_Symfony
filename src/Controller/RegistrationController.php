@@ -70,6 +70,8 @@ class RegistrationController extends AbstractController
             $entreprise->setPays($data['pays']);
             $entreprise->setCodePostal($data['code_postal']);
             $entreprise->setDocumentDeReference($data['document']);
+            $entreprise->setLat($data['lat']);
+            $entreprise->setLng($data['lng']);
             $entreprise->setUser($user);
 
             $entityManager->persist($entreprise);

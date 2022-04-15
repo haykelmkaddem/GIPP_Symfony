@@ -37,7 +37,7 @@ class ActualiteController extends AbstractController
             $actualite->setTitre($data['titre']);
             $actualite->setDescription($data['description']);
             $actualite->setCreatedAt(date_create_immutable('now'));
-            $actualite->setVisibilite(0);
+            $actualite->setImage($data['image']);
             $entityManager->persist($actualite);
             $entityManager->flush();
 
@@ -142,19 +142,10 @@ class ActualiteController extends AbstractController
     public function showall(Request $request, EntityManagerInterface $entityManager, ActualiteRepository $actualiteRepository): Response
     {
         $actualitedata = $actualiteRepository->findAll();
-        if($actualitedata) {
+
             $dataRes = $this->get('serializer')->serialize($actualitedata, 'json');
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
-        } else {
-            $categorydata = [
-                'message' => 'pas de données'
-            ];
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
-        }
     }
 }

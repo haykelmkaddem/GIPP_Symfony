@@ -60,7 +60,7 @@ class SalonController extends AbstractController
     }
 
     /**
-     * @Route("/show", name="salon_show", methods={"GET"})
+     * @Route("/show", name="salon_show", methods={"GET", "POST"})
      */
     public function show(Request $request, SalonRepository $salonRepository): Response
     {

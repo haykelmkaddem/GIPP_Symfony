@@ -32,22 +32,38 @@ class ReservationController extends AbstractController
     /**
      * @Route("/new", name="reservation_new", methods={"GET", "POST"})
      */
-    public function new(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, SalonRepository $salonRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, ReservationRepository $reservationRepository, UserRepository $userRepository, SalonRepository $salonRepository): Response
     {
         if($data = json_decode($request->getContent(), true)) {
-            $reservation = new Reservation();
-            $reservation->setStatutReservation($data['statut_reservation']);
-            $userdata = $userRepository->find($data['userId']);
-            $reservation->setUser($userdata);
             $salondata = $salonRepository->find($data['salonId']);
-            $reservation->setSalon($salondata);
-            $entityManager->persist($reservation);
-            $entityManager->flush();
+            $userdata = $userRepository->find($data['userId']);
+            $listReservation = $reservationRepository->findAll();
+            $i = false;
+            foreach ($listReservation as $reservation1) {
+                if ($reservation1->getSalon() == $salondata && $reservation1->getUser() == $userdata){
+                    $reservation2 = $reservation1;
+                    $i = true;
+                }
+            }
+            if ($i == false){
+                $reservation = new Reservation();
+                $reservation->setStatutReservation($data['statut_reservation']);
+                $reservation->setUser($userdata);
+                $reservation->setSalon($salondata);
+                $entityManager->persist($reservation);
+                $entityManager->flush();
 
-            $dataRes = $this->get('serializer')->serialize($reservation, 'json', ['groups' => ['reservationR','user','salonreservation']]);
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
+                $dataRes = $this->get('serializer')->serialize($reservation, 'json', ['groups' => ['reservationR','user','salonreservation']]);
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            } else{
+                $dataRes = $this->get('serializer')->serialize($reservation2, 'json', ['groups' => ['reservationR','user','salonreservation']]);
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }
+
         } else {
             $res = [
                 'message'=> "error"
@@ -254,6 +270,89 @@ class ReservationController extends AbstractController
                 }
             }
             $dataRes = $this->get('serializer')->serialize($verif, 'json', ['groups' => ['reservationR','user','salonreservation']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
+    /**
+     * @Route("/verifierStatut", name="reservation_verifierStatut", methods={"GET", "POST"})
+     */
+    public function verifierStatut(Request $request, EntityManagerInterface $entityManager,ReservationRepository $reservationRepository, UserRepository $userRepository, SalonRepository $salonRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+            $user = $userRepository->findOneBy(['id' => $data['userId']]);
+            $salon = $salonRepository->findOneBy(['id' => $data['salonId']]);
+            $i = false;
+            $listReservation = $reservationRepository->findAll();
+            foreach ($listReservation as $reservation) {
+                if ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "Accepté") {
+                    $res = [
+                        'message'=> "Accepté"
+                    ];
+                    $i= true;
+                } elseif ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "En Cours"){
+                    $res = [
+                        'message'=> "En Cours"
+                    ];
+                    $i= true;
+                }
+            }
+            if ($i == false){
+                $res = [
+                    'message'=> "no"
+                ];
+                $dataRes = $this->get('serializer')->serialize($res, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            } else{
+                $dataRes = $this->get('serializer')->serialize($res, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }
+
+
+        } else {
+            $res = [
+                'message'=> "error"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
+    /**
+     * @Route("/annulerReservation", name="reservation_annulerReservation", methods={"GET", "POST"})
+     */
+    public function annulerReservation(Request $request, EntityManagerInterface $entityManager, ReservationRepository $reservationRepository, UserRepository $userRepository, SalonRepository $salonRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+            $user = $userRepository->findOneBy(['id' => $data['userId']]);
+            $salon = $salonRepository->findOneBy(['id' => $data['salonId']]);
+            $listReservation = $reservationRepository->findAll();
+            foreach ($listReservation as $reservation) {
+                if ($reservation->getSalon() == $salon && $reservation->getUser() == $user){
+                    $entityManager->remove($reservation);
+                    $entityManager->flush();
+                }
+            }
+            $res = [
+                'message'=> "success"
+            ];
+            $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['reservationR','user','salonreservation']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
