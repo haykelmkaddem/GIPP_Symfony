@@ -96,7 +96,6 @@ class UserController extends AbstractController
             $user->setNom($data['nom']);
             $user->setPrenom($data['prenom']);
             $user->setTelephone($data['telephone']);
-            $user->setEmail($data['email']);
 
             $entityManager->persist($user);
             $entityManager->flush();
@@ -105,7 +104,6 @@ class UserController extends AbstractController
             $entreprise->setAdresse($data['adresse']);
             $entreprise->setPays($data['pays']);
             $entreprise->setCodePostal($data['code_postal']);
-            $entreprise->setDocumentDeReference($data['document']);
 
             $entityManager->persist($user);
             $entityManager->flush();
@@ -174,23 +172,41 @@ class UserController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $user = $userRepository->findOneBy(['id'=>$data['userId']]);
-
-            $user->setPassword(
-                $userPasswordEncoder->encodePassword(
-                    $user,
-                    $data['password']
-                )
+            $pass = $data['password'];
+            $passwordCrypted = $userPasswordEncoder->encodePassword(
+                $user,
+                $data['password']
             );
-            $entityManager->persist($user);
-            $entityManager->flush();
+            $newPass = $data['newpassword'];
+            $encoder = $encoderFactory->getEncoder($user);
+            if ($encoder->isPasswordValid($user->getPassword(),$data['password'],null)){
+                $user->setPassword(
+                    $userPasswordEncoder->encodePassword(
+                        $user,
+                        $newPass
+                    )
+                );
+                $entityManager->persist($user);
+                $entityManager->flush();
 
-            $result = [
-                'message' => 'updated'
-            ];
-            $dataRes = $this->get('serializer')->serialize($result, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
+                $result = [
+                    'message' => 'updated'
+                ];
+                $dataRes = $this->get('serializer')->serialize($result, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            } else{
+                $result = [
+                    'message' => 'Vérifier Votre Mot De Passe'
+                ];
+                $dataRes = $this->get('serializer')->serialize($result, 'json');
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
+            }
+
+
 
         } else {
             $er = [

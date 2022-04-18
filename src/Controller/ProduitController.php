@@ -70,7 +70,7 @@ class ProduitController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $produitdata = $produitRepository->findOneBy(['id' => $data['produitId']]);
-            $dataRes = $this->get('serializer')->serialize($produitdata, 'json', ['groups' => ['produit','pourproduit','panier', 'avis', 'produitvendus','forproduct']]);
+            $dataRes = $this->get('serializer')->serialize($produitdata, 'json', ['groups' => ['produit','pourproduit','avis', 'produitvendus','forproduct']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
@@ -154,7 +154,7 @@ class ProduitController extends AbstractController
     public function showall(Request $request, EntityManagerInterface $entityManager, ProduitRepository $produitRepository): Response
     {
         $produitdata = $produitRepository->findAll();
-            $dataRes = $this->get('serializer')->serialize($produitdata, 'json', ['groups' => ['produit','pourproduit','panier', 'avis', 'produitvendus','forproduct']]);
+            $dataRes = $this->get('serializer')->serialize($produitdata, 'json', ['groups' => ['produit','pourproduit','avis', 'produitvendus','forproduct']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;

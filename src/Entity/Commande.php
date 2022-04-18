@@ -60,7 +60,7 @@ class Commande
 
     /**
      * @Groups("commande")
-     * @ORM\Column(type="string", length=5000)
+     * @ORM\Column(type="string", length=5000, unique=true)
      */
     private $reference;
 

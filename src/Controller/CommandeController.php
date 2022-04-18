@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
@@ -38,11 +39,11 @@ class CommandeController extends AbstractController
     /**
      * @Route("/new", name="commande_new", methods={"GET", "POST"})
      */
-    public function new(Request $request, MailerInterface $mailer, EntityManagerInterface $entityManager, UserRepository $userRepository, PanierRepository $panierRepository, ProduitRepository $produitRepository): Response
+    public function new(Request $request, MailerInterface $mailer,ProduitVendusRepository $produitVendusRepository, EntityManagerInterface $entityManager, UserRepository $userRepository, PanierRepository $panierRepository, ProduitRepository $produitRepository): Response
     {
         if($data = json_decode($request->getContent(), true)) {
             $commande = new Commande();
-            $commande->setReference(bin2hex(random_bytes(10)));
+            $commande->setReference("GIPP".bin2hex(random_bytes(10)));
             $commande->setMethodeDePaiement($data['methodeDePaiement']);
             $commande->setCommentaire($data['commentaire']);
             $commande->setTotale($data['totale']);
@@ -54,23 +55,7 @@ class CommandeController extends AbstractController
             $entityManager->persist($commande);
             $entityManager->flush();
 
-            //email de confirmation
-            $email = (new Email())
-                ->from('haykel.mkaddem1@esprit.tn')
-                ->to('mkaddemhaykel@gmail.com')
-                //->cc('cc@example.com')
-                //->bcc('bcc@example.com')
-                //->replyTo('fabien@example.com')
-                //->priority(Email::PRIORITY_HIGH)
-                ->subject('[GIPP] Confirmation De Commande10')
-                //->text('Sending emails is fun again!')
-                ->html('<div style="align-self: center">
-                            <img src={{asset("http://127.0.0.1:8000/image/logo.png")}} width="50px" height="50px">
-                            <h1>BONJOUR HAYKEL MKADDEM,</h1>
-                            <h2>MERCI DAVOIR EFFECTUÉ VOS ACHATS SUR GIPP!</h2>
-                            <h3>REFERENCE DE COMMANDE EST</h3>
-                         </div>');
-            $mailer->send($email);
+
 
             $listproduitpanier = $panierRepository->findBy(['user' => $userdata]);
             foreach ($listproduitpanier as $panier){
@@ -80,8 +65,13 @@ class CommandeController extends AbstractController
                 $produit = $panier->getProduit();
                 $produitVendus->setNom($produit->getNom());
                 $produitVendus->setQuantite($panier->getQuantite());
-                $produitVendus->setPrix($produit->getPrix());
-                $produitVendus->setTotale($panier->getQuantite() * $produit->getPrix());
+                if ($produit->getDiscount() == null){
+                    $produitVendus->setPrix($produit->getPrix());
+                    $produitVendus->setTotale($panier->getQuantite() * $produit->getPrix());
+                }else {
+                    $produitVendus->setPrix($produit->getDiscount());
+                    $produitVendus->setTotale($panier->getQuantite() * $produit->getDiscount());
+                }
                 $entityManager->persist($produitVendus);
                 $entityManager->flush();
 
@@ -94,6 +84,35 @@ class CommandeController extends AbstractController
                 $entityManager->remove($panier);
                 $entityManager->flush();
             }
+
+            $produitsList = $produitVendusRepository->findBy(['commande' => $commande]);
+            //email de confirmation
+            $email = (new TemplatedEmail())
+                ->from('haykel.mkaddem1@esprit.tn')
+                ->to('mkaddemhaykel@gmail.com')
+                //->cc('cc@example.com')
+                //->bcc('bcc@example.com')
+                //->replyTo('fabien@example.com')
+                //->priority(Email::PRIORITY_HIGH)
+                ->subject('[GIPP] Confirmation De Commande ['.$commande->getReference().']')
+                //->text('Sending emails is fun again!')
+                // path of the Twig template to render
+                ->htmlTemplate('emails/commande.html.twig')
+
+                // pass variables (name => value) to the template
+                ->context([
+                    'nom' => $userdata->getNom(),
+                    'prenom' => $userdata->getPrenom(),
+                    'entreprise' => $userdata->getEntreprise()->getNom(),
+                    'adresse' => $userdata->getEntreprise()->getAdresse(),
+                    'mail' => $userdata->getEmail(),
+                    'produits' => $produitsList,
+                    'totale' => $data['totale'],
+                    'date' => $commande->getCreatedAt(),
+                    'ref' => $commande->getReference(),
+                    'payment' => $commande->getMethodeDePaiement(),
+                ]);
+            $mailer->send($email);
 
             $dataRes = $this->get('serializer')->serialize($commande, 'json', ['groups' => ['commande','user']]);
             $response = new Response($dataRes);
