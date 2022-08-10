@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Salon;
 use App\Form\SalonType;
+use App\Repository\ReservationRepository;
 use App\Repository\SalonRepository;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -66,7 +68,7 @@ class SalonController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $salondata = $salonRepository->findOneBy(['id' => $data['salonId']]);
-            $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user']]);
+            $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user','entreprise','userEntreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
@@ -149,16 +151,36 @@ class SalonController extends AbstractController
     public function showall(Request $request, EntityManagerInterface $entityManager, SalonRepository $salonRepository): Response
     {
         $salondata = $salonRepository->findAll();
-        if($salondata) {
             $dataRes = $this->get('serializer')->serialize($salondata, 'json', ['groups' => ['salon','reservation','user']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
+    }
+
+    /**
+     * @Route("/showMySalons", name="salon_showMySalons", methods={"GET", "POST"})
+     */
+    public function showMySalons(Request $request, SalonRepository $salonRepository, UserRepository $userRepository, ReservationRepository $reservationRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+            $user = $userRepository->findOneBy(['id' => $data['userId']]);
+            $reservations = $reservationRepository->findBy(['user' => $user]);
+            $res = [];
+            foreach ($reservations as $reservation){
+                $salondata = $salonRepository->findOneBy(['id' => $reservation->getSalon()->getId()]);
+                array_push($res, $salondata);
+            }
+
+
+            $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['salon','reservation','user','entreprise','userEntreprise']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
         } else {
-            $categorydata = [
+            $er = [
                 'message' => 'pas de données'
             ];
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;

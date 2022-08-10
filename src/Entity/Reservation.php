@@ -29,12 +29,14 @@ class Reservation
     /**
      * @Groups("reservationR")
      * @ORM\ManyToOne(targetEntity=Salon::class, inversedBy="reservation")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $salon;
 
     /**
      * @Groups("reservation","reservationR")
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="reservation")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $user;
 

@@ -25,12 +25,20 @@ class LoginController extends AbstractController
         if($data = json_decode($request->getContent(), true)) {
 
             $userdata = $userRepository->findOneBy(['email' => $data['email']]);
-            if ($userdata) {
+            if ($userdata && $userdata->getIsBlocked() == false) {
                 $encoder = $encoderFactory->getEncoder($userdata);
-                if ($encoder->isPasswordValid($userdata->getPassword(), $data['password'], null)) {
+                if ($encoder->isPasswordValid($userdata->getPassword(), $data['password'], null) && $userdata->isVerified()== true) {
                     $res = [
                         "user" => $userdata,
                         "message" => "ok"
+                    ];
+                    $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
+                    $response = new Response($dataRes);
+                    $response->headers->set('Content-Type', 'application/json');
+                    return $response;
+                } elseif ($encoder->isPasswordValid($userdata->getPassword(), $data['password'], null) && $userdata->isVerified()== false){
+                    $res = [
+                        'message' => 'Verify Your Account!!'
                     ];
                     $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
                     $response = new Response($dataRes);
@@ -46,6 +54,14 @@ class LoginController extends AbstractController
                     return $response;
                 }
 
+            } elseif ($userdata && $userdata->getIsBlocked() == true) {
+                $res = [
+                    'message' => 'Your Account is Blocked!!'
+                ];
+                $dataRes = $this->get('serializer')->serialize($res, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
+                $response = new Response($dataRes);
+                $response->headers->set('Content-Type', 'application/json');
+                return $response;
             } else {
                 $res = [
                     'message' => "email not found"

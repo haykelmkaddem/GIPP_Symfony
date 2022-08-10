@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Actualite;
 use App\Form\ActualiteType;
 use App\Repository\ActualiteRepository;
+use App\Repository\ImageRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,12 +33,19 @@ class ActualiteController extends AbstractController
      */
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        if($data = json_decode($request->getContent(), true)) {
             $actualite = new Actualite();
-            $actualite->setTitre($data['titre']);
-            $actualite->setDescription($data['description']);
+            $actualite->setTitre($request->get('titre'));
+            $actualite->setDescription($request->get('description'));
             $actualite->setCreatedAt(date_create_immutable('now'));
-            $actualite->setImage($data['image']);
+            if($images = $request->files->get('assets')){
+                $fichier = md5(uniqid()) . '.' . $images->guessExtension();
+                $images->move(
+                    $this->getParameter('images_directory'),
+                    $fichier
+                );
+
+                $actualite->setImage($fichier);
+            }
             $entityManager->persist($actualite);
             $entityManager->flush();
 
@@ -46,15 +54,6 @@ class ActualiteController extends AbstractController
             $response->headers->set('Content-Type', 'application/json');
             return $response;
 
-        }else{
-            $res = [
-                'message'=> "error"
-            ];
-            $dataRes = $this->get('serializer')->serialize($res, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
-        }
     }
 
     /**
@@ -82,12 +81,20 @@ class ActualiteController extends AbstractController
     /**
      * @Route("/edit", name="actualite_edit", methods={"GET", "POST"})
      */
-    public function edit(Request $request, EntityManagerInterface $entityManager, ActualiteRepository $actualiteRepository): Response
+    public function edit(Request $request, EntityManagerInterface $entityManager, ActualiteRepository $actualiteRepository, ImageRepository $imageRepository): Response
     {
-        if($data = json_decode($request->getContent(), true)) {
-            $actualite = $actualiteRepository->find($data['actualiteId']);
-            $actualite->setTitre($data['titre']);
-            $actualite->setDescription($data['description']);
+            $actualite = $actualiteRepository->find($request->get('id'));
+            $actualite->setTitre($request->get('titre'));
+            $actualite->setDescription($request->get('description'));
+            if($images = $request->files->get('assets')){
+                $fichier = md5(uniqid()) . '.' . $images->guessExtension();
+                $images->move(
+                    $this->getParameter('images_directory'),
+                    $fichier
+                );
+
+                $actualite->setImage($fichier);
+            }
             $entityManager->persist($actualite);
             $entityManager->flush();
 
@@ -95,16 +102,6 @@ class ActualiteController extends AbstractController
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
-
-        } else{
-            $res = [
-                'message'=> "error"
-            ];
-            $dataRes = $this->get('serializer')->serialize($res, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
-        }
     }
 
     /**

@@ -250,6 +250,7 @@ class UserController extends AbstractController
         }
 
     }
+
     /**
      * @Route("/tog", name="tog")
      */
@@ -275,5 +276,94 @@ class UserController extends AbstractController
             $response->headers->set('Content-Type', 'application/json');
             return $response;
         }
+    }
+
+    /**
+     * @Route("/showallUsers", name="user_showallUsers", methods={"GET", "POST"})
+     */
+    public function showallUsers(Request $request, UserRepository $userRepository, UserPasswordEncoderInterface $userPasswordEncoder, EntityManagerInterface $entityManager): Response
+    {
+        $users1 = [];
+
+            $users = $userRepository->findAll();
+            foreach ($users as $user){
+                $admin = false;
+                foreach ($user->getRoles() as $role){
+                    if ($role == "ROLE_ADMIN"){
+                        $admin = true;
+                    }
+                }
+                if ($admin == false){
+                    array_push($users1,$user);
+                }
+            }
+            $dataRes = $this->get('serializer')->serialize($users1, 'json', ['groups' => ['user', 'entreprise', 'userEntreprise']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+    }
+
+    /**
+     * @Route("/blocked", name="user_blocked", methods={"GET", "POST"})
+     */
+    public function blocked(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+            $user = $userRepository->findOneBy(['id'=>$data['userId']]);
+            $user->setIsBlocked(true);
+
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            $result = [
+                'message' => 'success'
+            ];
+
+            $dataRes = $this->get('serializer')->serialize($result, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+    /**
+     * @Route("/notblocked", name="user_notblocked", methods={"GET", "POST"})
+     */
+    public function notblocked(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+            $user = $userRepository->findOneBy(['id'=>$data['userId']]);
+            $user->setIsBlocked(false);
+
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            $result = [
+                'message' => 'success'
+            ];
+
+            $dataRes = $this->get('serializer')->serialize($result, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+
     }
 }

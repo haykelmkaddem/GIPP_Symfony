@@ -5,7 +5,9 @@ namespace App\Controller;
 use App\Entity\Avis;
 use App\Form\AvisType;
 use App\Repository\AvisRepository;
+use App\Repository\CommandeRepository;
 use App\Repository\ProduitRepository;
+use App\Repository\ProduitVendusRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -147,19 +149,70 @@ class AvisController extends AbstractController
     public function showall(Request $request, EntityManagerInterface $entityManager, AvisRepository $avisRepository): Response
     {
         $avisdata = $avisRepository->findAll();
-        if($avisdata) {
-            $dataRes = $this->get('serializer')->serialize($avisdata, 'json', ['groups' => ['avis','produit','user']]);
+            $dataRes = $this->get('serializer')->serialize($avisdata, 'json', ['groups' => ['avis','produit','user', 'entreprise','userEntreprise']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+    }
+
+    /**
+     * @Route("/avisofproduct", name="avis_avisofproduct", methods={"GET", "POST"})
+     */
+    public function avisofproduct(Request $request, AvisRepository $avisRepository, ProduitRepository $produitRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+
+            $produit = $produitRepository->findOneBy(['id'=> $data['produitId']]);
+            $avis = $avisRepository->findBy(['produit'=> $produit]);
+
+            $dataRes = $this->get('serializer')->serialize($avis, 'json', ['groups' => ['avis','produit','user', 'entreprise','userEntreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
         } else {
-            $categorydata = [
+            $er = [
                 'message' => 'pas de données'
             ];
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
         }
     }
+
+    /**
+     * @Route("/showAvisOrNot", name="avis_showAvisOrNot", methods={"GET", "POST"})
+     */
+    public function showAvisOrNot(Request $request, AvisRepository $avisRepository, ProduitRepository $produitRepository, UserRepository $userRepository, CommandeRepository$commandeRepository, ProduitVendusRepository $produitVendusRepository): Response
+    {
+        if($data = json_decode($request->getContent(), true)) {
+
+            $user = $userRepository->findOneBy(['id'=> $data['userId']]);
+            $produit = $produitRepository->findOneBy(['id'=> $data['produitId']]);
+            $commandes = $commandeRepository->findBy(['user'=> $user]);
+            $i = false;
+            foreach ( $commandes as $commande){
+                $vendusList = $produitVendusRepository->findBy(['commande'=> $commande]);
+                foreach ($vendusList as $produitVendus){
+                    if ($produitVendus->getProduit() == $produit){
+                        $i = true;
+                    }
+                }
+            }
+
+            $dataRes = $this->get('serializer')->serialize($i, 'json', ['groups' => ['avis','produit','user']]);
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        } else {
+            $er = [
+                'message' => 'pas de données'
+            ];
+            $dataRes = $this->get('serializer')->serialize($er, 'json');
+            $response = new Response($dataRes);
+            $response->headers->set('Content-Type', 'application/json');
+            return $response;
+        }
+    }
+
 }

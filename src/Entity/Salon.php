@@ -30,7 +30,7 @@ class Salon
 
     /**
      * @Groups("salon","salonreservation")
-     * @ORM\Column(type="string", length=5000)
+     * @ORM\Column(type="string", length=3000)
      */
     private $description;
 

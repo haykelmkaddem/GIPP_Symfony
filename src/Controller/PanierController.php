@@ -217,7 +217,7 @@ class PanierController extends AbstractController
             $userata = $userRepository->findOneBy(['id' => $data['userId']]);
             if ($userata) {
                 $panierdata = $panierRepository->findBy(['user' => $userata]);
-                $dataRes = $this->get('serializer')->serialize($panierdata, 'json', ['groups' => ['panier','user','produit']]);
+                $dataRes = $this->get('serializer')->serialize($panierdata, 'json', ['groups' => ['panier','user','produit', 'image']]);
                 $response = new Response($dataRes);
                 $response->headers->set('Content-Type', 'application/json');
                 return $response;

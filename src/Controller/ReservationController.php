@@ -295,14 +295,19 @@ class ReservationController extends AbstractController
             $i = false;
             $listReservation = $reservationRepository->findAll();
             foreach ($listReservation as $reservation) {
-                if ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "Accepté") {
+                if ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "Acceptée") {
                     $res = [
-                        'message'=> "Accepté"
+                        'message'=> "Acceptée"
                     ];
                     $i= true;
                 } elseif ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "En Cours"){
                     $res = [
                         'message'=> "En Cours"
+                    ];
+                    $i= true;
+                } elseif ($reservation->getSalon() == $salon && $reservation->getUser() == $user && $reservation->getStatutReservation() == "Annulée"){
+                    $res = [
+                        'message'=> "Annulée"
                     ];
                     $i= true;
                 }

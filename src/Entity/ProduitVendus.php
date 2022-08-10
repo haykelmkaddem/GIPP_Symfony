@@ -46,11 +46,13 @@ class ProduitVendus
 
     /**
      * @ORM\ManyToOne(targetEntity=Commande::class, inversedBy="produitVendus")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $commande;
 
     /**
      * @ORM\ManyToOne(targetEntity=Produit::class, inversedBy="Produitvendus")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $produit;
 

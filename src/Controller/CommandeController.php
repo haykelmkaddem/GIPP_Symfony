@@ -43,7 +43,7 @@ class CommandeController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $commande = new Commande();
-            $commande->setReference("GIPP".bin2hex(random_bytes(10)));
+            $commande->setReference(strtoupper("GIPP".bin2hex(random_bytes(10))));
             $commande->setMethodeDePaiement($data['methodeDePaiement']);
             $commande->setCommentaire($data['commentaire']);
             $commande->setTotale($data['totale']);
@@ -138,11 +138,7 @@ class CommandeController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $commande = $commandeRepository->findOneBy(['id'=>$data['commandeId']]);
-            $listproduitVendus = $produitVendusRepository->findBy(['commande'=>$commande]);
-            $resultat = [
-                $commande,$listproduitVendus
-            ];
-            $dataRes = $this->get('serializer')->serialize($resultat, 'json', ['groups' => ['commande','user','produitvendus']]);
+            $dataRes = $this->get('serializer')->serialize($commande, 'json', ['groups' => ['commande','user','produitvendus','userEntreprise','entreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
@@ -169,7 +165,7 @@ class CommandeController extends AbstractController
             $entityManager->persist($commandeData);
             $entityManager->flush();
 
-            $dataRes = $this->get('serializer')->serialize($commandeData, 'json', ['groups' => ['commande','user','produitvendus']]);
+            $dataRes = $this->get('serializer')->serialize($commandeData, 'json', ['groups' => ['commande','user','produitvendus', 'userEntreprise','entreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
@@ -224,21 +220,10 @@ class CommandeController extends AbstractController
     public function showall(Request $request, CommandeRepository $commandeRepository): Response
     {
         $commandeData = $commandeRepository->findAll();
-
-        if($commandeData) {
-            $dataRes = $this->get('serializer')->serialize($commandeData, 'json', ['groups' => ['commande','user','produitvendus']]);
+            $dataRes = $this->get('serializer')->serialize($commandeData, 'json', ['groups' => ['commande','user','produitvendus', 'userEntreprise','entreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
-        } else {
-            $categorydata = [
-                'message' => 'pas de données'
-            ];
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json');
-            $response = new Response($dataRes);
-            $response->headers->set('Content-Type', 'application/json');
-            return $response;
-        }
     }
 
     /**
@@ -250,7 +235,7 @@ class CommandeController extends AbstractController
             $user = $userRepository->findOneBy(['id'=>$data['userId']]);
             $listcommandeUser = $commandeRepository->findBy(['user'=>$user]);
 
-            $dataRes = $this->get('serializer')->serialize($listcommandeUser, 'json', ['groups' => ['commande','user','produitvendus']]);
+            $dataRes = $this->get('serializer')->serialize($listcommandeUser, 'json', ['groups' => ['commande','user','produitvendus', 'userEntreprise','entreprise']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;

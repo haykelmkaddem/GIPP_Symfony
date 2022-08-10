@@ -46,7 +46,7 @@ class Entreprise
 
     /**
      * @Groups("entreprise")
-     * @ORM\Column(type="string", length=5000)
+     * @ORM\Column(type="string", length=3000)
      */
     private $document_de_reference;
 
@@ -64,6 +64,7 @@ class Entreprise
 
     /**
      * @ORM\OneToOne(targetEntity=User::class, inversedBy="entreprise", cascade={"persist", "remove"})
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $user;
 

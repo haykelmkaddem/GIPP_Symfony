@@ -35,7 +35,6 @@ class CategorieController extends AbstractController
         if($data = json_decode($request->getContent(), true)) {
             $categorie = new Categorie();
             $categorie->setNom($data['nom']);
-            $categorie->setDescription($data['description']);
             $entityManager->persist($categorie);
             $entityManager->flush();
 
@@ -62,7 +61,7 @@ class CategorieController extends AbstractController
     {
         if($data = json_decode($request->getContent(), true)) {
             $categorydata = $categorieRepository->findOneBy(['id' => $data['categorieId']]);
-            $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit']]);
+            $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit','image']]);
             $response = new Response($dataRes);
             $response->headers->set('Content-Type', 'application/json');
             return $response;
@@ -88,7 +87,6 @@ class CategorieController extends AbstractController
             $categorydata = $categorieRepository->findOneBy(['id' => $data['categorieId']]);
             if ($categorydata){
                 $categorydata->setNom($data['nom']);
-                $categorydata->setDescription($data['description']);
                 $entityManager->persist($categorydata);
                 $entityManager->flush();
                 $dataRes = $this->get('serializer')->serialize($categorydata, 'json', ['groups' => ['categorie','produit']]);

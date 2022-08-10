@@ -27,7 +27,7 @@ class User implements UserInterface
 
     /**
      * @Groups("user")
-     * @ORM\Column(type="string", length=180, unique=true)
+     * @ORM\Column(type="string", length=191, unique=true)
      */
     private $email;
 
@@ -93,6 +93,13 @@ class User implements UserInterface
      * @ORM\OneToOne(targetEntity=Entreprise::class, mappedBy="user", cascade={"persist", "remove"})
      */
     private $entreprise;
+
+    /**
+     * @Groups("user")
+     * @ORM\Column(type="boolean")
+     */
+    private $is_blocked;
+
 
     public function __construct()
     {
@@ -370,6 +377,18 @@ class User implements UserInterface
         }
 
         $this->entreprise = $entreprise;
+
+        return $this;
+    }
+
+    public function getIsBlocked(): ?bool
+    {
+        return $this->is_blocked;
+    }
+
+    public function setIsBlocked(bool $is_blocked): self
+    {
+        $this->is_blocked = $is_blocked;
 
         return $this;
     }

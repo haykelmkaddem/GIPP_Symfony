@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Avis
 {
     /**
-     * @Groups("avis")
+     * @Groups("avis","avisforproduct")
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
@@ -21,19 +21,19 @@ class Avis
     private $id;
 
     /**
-     * @Groups("avis")
+     * @Groups("avis", "avisforproduct")
      * @ORM\Column(type="integer")
      */
     private $etoile_nb;
 
     /**
-     * @Groups("avis")
-     * @ORM\Column(type="string", length=5000)
+     * @Groups("avis", "avisforproduct")
+     * @ORM\Column(type="string", length=3000)
      */
     private $commentaire;
 
     /**
-     * @Groups("avis")
+     * @Groups("avis", "avisforproduct")
      * @ORM\Column(type="datetime_immutable")
      */
     private $created_at;
@@ -41,12 +41,14 @@ class Avis
     /**
      * @Groups("avis")
      * @ORM\ManyToOne(targetEntity=Produit::class, inversedBy="avis")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $produit;
 
     /**
      * @Groups("avis")
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="avis")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $user;
 

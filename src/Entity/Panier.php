@@ -35,12 +35,14 @@ class Panier
     /**
      * @Groups("panier")
      * @ORM\ManyToOne(targetEntity=Produit::class, inversedBy="panier")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $produit;
 
     /**
      * @Groups("panier")
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="panier")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $user;
 

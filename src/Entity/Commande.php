@@ -60,11 +60,12 @@ class Commande
 
     /**
      * @Groups("commande")
-     * @ORM\Column(type="string", length=5000, unique=true)
+     * @ORM\Column(type="string", length=191, unique=true)
      */
     private $reference;
 
     /**
+     * @Groups("produitvendus")
      * @ORM\OneToMany(targetEntity=ProduitVendus::class, mappedBy="commande")
      */
     private $produitVendus;
@@ -72,6 +73,7 @@ class Commande
     /**
      * @Groups("commande")
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="commande")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $user;
 

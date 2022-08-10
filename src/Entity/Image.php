@@ -24,12 +24,13 @@ class Image
 
     /**
      * @Groups("image")
-     * @ORM\Column(type="string", length=5000)
+     * @ORM\Column(type="string", length=3000)
      */
     private $imageURL;
 
     /**
      * @ORM\ManyToOne(targetEntity=Produit::class, inversedBy="image")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $produit;
 

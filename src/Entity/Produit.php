@@ -30,7 +30,7 @@ class Produit
 
     /**
      * @Groups("produit")
-     * @ORM\Column(type="string", length=5000)
+     * @ORM\Column(type="string", length=3000)
      */
     private $description;
 
@@ -61,6 +61,7 @@ class Produit
     /**
      * @Groups("categorie_detail","pourproduit")
      * @ORM\ManyToOne(targetEntity=Categorie::class, inversedBy="Produit")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      */
     private $categorie;
 
@@ -78,6 +79,7 @@ class Produit
     private $Produitvendus;
 
     /**
+     * @Groups("forproductavis")
      * @ORM\OneToMany(targetEntity=Avis::class, mappedBy="produit")
      */
     private $avis;
@@ -89,9 +91,58 @@ class Produit
     private $discount;
 
     /**
-     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="produit")
+     * @Groups("produit")
+     * @ORM\OneToMany(targetEntity=Image::class, mappedBy="produit", cascade={"persist", "remove"})
      */
     private $image;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="integer")
+     */
+    private $vu;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="boolean")
+     */
+    private $visibilite;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=255)
+     */
+    private $nomAr;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=255)
+     */
+    private $nomIt;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=255)
+     */
+    private $nomEn;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=5000)
+     */
+    private $descriptionIt;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=5000)
+     */
+    private $descriptionAr;
+
+    /**
+     * @Groups("produit")
+     * @ORM\Column(type="string", length=5000)
+     */
+    private $descriptionEn;
 
     public function __construct()
     {
@@ -319,6 +370,102 @@ class Produit
                 $image->setProduit(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getVu(): ?int
+    {
+        return $this->vu;
+    }
+
+    public function setVu(int $vu): self
+    {
+        $this->vu = $vu;
+
+        return $this;
+    }
+
+    public function getVisibilite(): ?bool
+    {
+        return $this->visibilite;
+    }
+
+    public function setVisibilite(bool $visibilite): self
+    {
+        $this->visibilite = $visibilite;
+
+        return $this;
+    }
+
+    public function getNomAr(): ?string
+    {
+        return $this->nomAr;
+    }
+
+    public function setNomAr(string $nomAr): self
+    {
+        $this->nomAr = $nomAr;
+
+        return $this;
+    }
+
+    public function getNomIt(): ?string
+    {
+        return $this->nomIt;
+    }
+
+    public function setNomIt(string $nomIt): self
+    {
+        $this->nomIt = $nomIt;
+
+        return $this;
+    }
+
+    public function getNomEn(): ?string
+    {
+        return $this->nomEn;
+    }
+
+    public function setNomEn(string $nomEn): self
+    {
+        $this->nomEn = $nomEn;
+
+        return $this;
+    }
+
+    public function getDescriptionIt(): ?string
+    {
+        return $this->descriptionIt;
+    }
+
+    public function setDescriptionIt(string $descriptionIt): self
+    {
+        $this->descriptionIt = $descriptionIt;
+
+        return $this;
+    }
+
+    public function getDescriptionAr(): ?string
+    {
+        return $this->descriptionAr;
+    }
+
+    public function setDescriptionAr(string $descriptionAr): self
+    {
+        $this->descriptionAr = $descriptionAr;
+
+        return $this;
+    }
+
+    public function getDescriptionEn(): ?string
+    {
+        return $this->descriptionEn;
+    }
+
+    public function setDescriptionEn(string $descriptionEn): self
+    {
+        $this->descriptionEn = $descriptionEn;
 
         return $this;
     }
